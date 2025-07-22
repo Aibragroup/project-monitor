@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Based Edge Device Monitoring System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="shield" class="w-8 h-8 text-blue-500"></i>
+                    <span class="text-xl font-bold text-white">EdgeMonitor</span>
+                </div>
+                
+                <div class="flex space-x-1">
+                    <button onclick="showTab('dashboard')" id="tab-dashboard" class="tab-button bg-white text-gray-800 px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Dashboard</span>
+                    </button>
+                    <button onclick="showTab('devices')" id="tab-devices" class="tab-button text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+                        <i data-lucide="monitor" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Devices</span>
+                    </button>
+                    <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Analytics</span>
+                    </button>
+                    <button onclick="showTab('maintenance')" id="tab-maintenance" class="tab-button text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-2">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Maintenance</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Dashboard Tab -->
+        <div id="dashboard-content" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Devices</p>
+                            <p id="total-devices" class="text-2xl font-bold text-white mt-1">0</p>
+                            <p class="text-gray-500 text-xs mt-1" id="total-devices-change">Network devices</p>
+                        </div>
+                        <div class="bg-blue-500 p-3 rounded-lg">
+                            <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Online</p>
+                            <p id="online-devices" class="text-2xl font-bold text-white mt-1">0</p>
+                            <p class="text-gray-500 text-xs mt-1" id="uptime-percentage">0% uptime</p>
+                        </div>
+                        <div class="bg-green-500 p-3 rounded-lg">
+                            <i data-lucide="check-circle" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Alerts</p>
+                            <p id="total-alerts" class="text-2xl font-bold text-white mt-1">0</p>
+                            <p class="text-gray-500 text-xs mt-1" id="alerts-status">All systems normal</p>
+                        </div>
+                        <div class="bg-orange-500 p-3 rounded-lg">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">AI Health Score</p>
+                            <p id="avg-health-score" class="text-2xl font-bold text-white mt-1">0%</p>
+                            <p class="text-gray-500 text-xs mt-1" id="health-status">Good health</p>
+                        </div>
+                        <div class="bg-purple-500 p-3 rounded-lg">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-4">Device Status Distribution</h3>
+                    <div id="status-distribution" class="space-y-4"></div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-4">Recent Alerts</h3>
+                    <div id="recent-alerts" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Devices Tab -->
+        <div id="devices-content" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Device Management</h2>
+                <button onclick="showAddDeviceForm()" class="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Add Device</span>
+                </button>
+            </div>
+            <div id="devices-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-content" class="tab-content hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-white">Analytics Dashboard</h2>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select id="analytics-device" class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                        <option value="">Select Device</option>
+                    </select>
+                    <select id="analytics-metric" class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white">
+                        <option value="temperature">Temperature</option>
+                        <option value="humidity">Humidity</option>
+                        <option value="battery">Battery</option>
+                        <option value="cpu">CPU Usage</option>
+                        <option value="memory">Memory Usage</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <canvas id="analytics-chart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Maintenance Tab -->
+        <div id="maintenance-content" class="tab-content hidden">
+            <h2 class="text-2xl font-bold text-white mb-6">Predictive Maintenance</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-400">High Risk Devices</h3>
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                    </div>
+                    <div id="high-risk-count" class="text-2xl font-bold text-white">0</div>
+                    <div class="text-sm text-red-400 mt-1">Require immediate attention</div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-400">Medium Risk Devices</h3>
+                        <i data-lucide="clock" class="w-5 h-5 text-orange-500"></i>
+                    </div>
+                    <div id="medium-risk-count" class="text-2xl font-bold text-white">0</div>
+                    <div class="text-sm text-orange-400 mt-1">Schedule maintenance soon</div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-400">Avg Health Score</h3>
+                        <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                    </div>
+                    <div id="maintenance-avg-score" class="text-2xl font-bold text-white">0%</div>
+                    <div class="text-sm text-green-400 mt-1">+3% from last month</div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-400">Est. Maintenance Cost</h3>
+                        <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+                    </div>
+                    <div id="maintenance-cost" class="text-2xl font-bold text-white">0 TZS</div>
+                    <div class="text-sm text-blue-400 mt-1">Next 30 days</div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h3 class="text-lg font-semibold text-white mb-4">AI Recommendations</h3>
+                <div id="maintenance-recommendations" class="space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Device Modal -->
+    <div id="add-device-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-white">Add New Device</h3>
+                <button onclick="hideAddDeviceForm()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="add-device-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Device Name</label>
+                    <input type="text" id="device-name" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Device Type</label>
+                    <select id="device-type" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                        <option value="router">Router</option>
+                        <option value="switch">Switch</option>
+                        <option value="firewall">Firewall</option>
+                        <option value="wireless_ap">Wireless Access Point</option>
+                        <option value="load_balancer">Load Balancer</option>
+                        <option value="gateway">Gateway</option>
+                        <option value="proxy_server">Proxy Server</option>
+                        <option value="modem">Modem</option>
+                        <option value="ids_ips">IDS/IPS</option>
+                        <option value="voip_gateway">VoIP Gateway</option>
+                        <option value="repeater">Repeater</option>
+                        <option value="bridge">Bridge</option>
+                        <option value="nas">NAS</option>
+                        <option value="vpn_concentrator">VPN Concentrator</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1" id="device-type-description">Network routing device</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                    <input type="text" id="device-location" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                    <select id="device-status" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="warning">Warning</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Device Metrics</label>
+                    <div id="device-metrics-container" class="grid grid-cols-2 gap-3 p-3 bg-gray-700 rounded-lg max-h-64 overflow-y-auto">
+                        <!-- Metrics will be populated by JavaScript -->
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2" id="metrics-info">Configure metrics specific to this device type</p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="hideAddDeviceForm()" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg">Add Device</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        // Handle device type changes in the form
+        document.getElementById('device-type').addEventListener('change', function() {
+            const deviceType = this.value;
+            const batteryField = document.getElementById('battery-field');
+            const batteryInfo = document.getElementById('battery-info');
+            const description = document.getElementById('device-type-description');
+            
+            const typeConfigs = {
+                sensor: { hasBattery: true, description: 'Environmental or IoT sensor device' },
+                gateway: { hasBattery: false, description: 'Network gateway or hub device' },
+                controller: { hasBattery: false, description: 'Industrial controller or PLC' },
+                camera: { hasBattery: true, description: 'Security or monitoring camera' }
+            };
+            
+            const config = typeConfigs[deviceType];
+            description.textContent = config.description;
+            
+            if (config.hasBattery) {
+                batteryField.style.display = 'block';
+                batteryInfo.textContent = 'This device type typically includes battery monitoring';
+            } else {
+                batteryField.style.display = 'none';
+                batteryInfo.textContent = "This device type typically doesn't have a battery";
+            }
+        });
+    </script>
+</body>
+</html>
