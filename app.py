@@ -19,6 +19,7 @@ import threading
 import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from flask import send_from_directory
 
 # Flask and extensions
 from flask import Flask, request, jsonify, g
@@ -59,7 +60,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 # Configuration
 app.config.update({
@@ -573,6 +574,20 @@ def calculate_predictive_score(status: str, metrics: Dict[str, float]) -> int:
     return max(0, min(100, base_score))
 
 # API Routes
+# Route for serving React's index.html
+@app.route("/")
+def serve_react():
+    return send_from_directory(app.static_folder, 'index.html')
+
+# Route for serving static files (CSS, JS, images)
+@app.route("/static/<path:path>")
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
+
+# Route for your API endpoints
+@app.route("/api/data")
+def get_data():
+    return {"message": "Hello from Flask!"}
 
 @app.route('/api/login', methods=['POST'])
 def login():

@@ -86,7 +86,13 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: string;
+    location: string;
+    status: string;
+    metrics: Record<string, number | string>;
+  }>({
     name: device?.name || '',
     type: device?.type || '',
     location: device?.location || '',
@@ -97,11 +103,10 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
   const currentTypeConfig = DEVICE_TYPES[formData.type];
 
   useEffect(() => {
-    // Initialize metrics when device type changes
     if (!device && formData.type) {
       const defaultMetrics: Record<string, number> = {};
-      currentTypeConfig.metrics.forEach(metric => {
-        defaultMetrics[metric] = 0; // Start with 0 instead of defaults
+      currentTypeConfig?.metrics.forEach(metric => {
+        defaultMetrics[metric] = 0;
       });
       setFormData(prev => ({ ...prev, metrics: defaultMetrics }));
     }
@@ -149,8 +154,6 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
       connection_uptime: 99,
       error_rates: 0.5,
       detected_threats: 8,
-      dropped_packets: 12,
-      cpu_load: 35,
       false_positives: 3,
       signature_updates: 95,
       active_calls: 25,
@@ -181,28 +184,23 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted with data:', formData); // Debug log
-    
-    // Validate required fields
     if (!formData.name || !formData.type || !formData.location || !formData.status) {
       alert('Please fill in all required fields');
       return;
     }
 
-    // Validate metrics - ensure all have values
     const validMetrics: Record<string, number> = {};
     Object.entries(formData.metrics).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== 'string' || value !== '')
+      ) {
         validMetrics[key] = typeof value === 'number' ? value : parseFloat(value.toString()) || 0;
       }
     });
-    
-    console.log('Validated metrics:', validMetrics); // Debug log
 
-    // Calculate predictive score based on status and metrics
     const predictiveScore = calculatePredictiveScore(formData.status, validMetrics);
-    
-    console.log('Calculated predictive score:', predictiveScore); // Debug log
     
     const newDevice: Device = {
       id: device?.id || `device-${Date.now()}`,
@@ -215,42 +213,36 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
       alerts: device?.alerts || [],
       predictiveScore,
       maintenanceDate: device?.maintenanceDate || new Date(Date.now() + 30 * 24 * 3600000),
-      timestamp: new Date() // Add timestamp for compatibility
+      timestamp: new Date()
     };
 
-    console.log('Final device object:', newDevice); // Debug log
-
-    // Call onSubmit and ensure form closes after successful submission
     onSubmit(newDevice);
   };
 
   const calculatePredictiveScore = (status: string, metrics: Record<string, number>): number => {
     let baseScore = 100;
     
-    // Adjust score based on device status
     switch (status) {
       case 'critical':
-        baseScore = 15; // Very low score for critical devices
+        baseScore = 15;
         break;
       case 'warning':
-        baseScore = 45; // Medium-low score for warning devices
+        baseScore = 45;
         break;
       case 'offline':
-        baseScore = 25; // Low score for offline devices
+        baseScore = 25;
         break;
       case 'online':
-        baseScore = 85; // Good score for online devices
+        baseScore = 85;
         break;
       default:
         baseScore = 50;
     }
     
-    // Adjust based on metrics (if any are concerning)
     const metricValues = Object.values(metrics);
     if (metricValues.length > 0) {
       const avgMetric = metricValues.reduce((sum, val) => sum + val, 0) / metricValues.length;
       
-      // If metrics are very high (>90) or very low (<10), reduce score
       if (avgMetric > 90) {
         baseScore = Math.max(10, baseScore - 20);
       } else if (avgMetric < 10) {
@@ -291,9 +283,8 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
     
-    // Keep the modal within viewport bounds
-    const maxX = window.innerWidth - 800; // Approximate modal width
-    const maxY = window.innerHeight - 600; // Approximate modal height
+    const maxX = window.innerWidth - 800;
+    const maxY = window.innerHeight - 600;
     
     setPosition({
       x: Math.max(0, Math.min(newX, maxX)),
@@ -412,130 +403,130 @@ export const DeviceForm: React.FC<DeviceFormProps> = ({ device, onSubmit, onCanc
             {device ? 'Edit Device' : 'Add New Device'}
           </h2>
         </div>
-          <button
-            onClick={onCancel}
+        <button
+          onClick={onCancel}
           className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-gray-600 rounded"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        >
+          <X className="w-6 h-6" />
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Device Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter device name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Device Type
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
-              >
-                <option value="" disabled>Select device type</option>
-                {Object.entries(DEVICE_TYPES).map(([key, config]) => (
-                  <option key={key} value={key}>{config.name}</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400 mt-1">
-                {formData.type ? getDeviceTypeDescription(formData.type) : 'Choose a device type to see description'}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Location
-              </label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
-                placeholder="Enter device location"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
-              >
-                <option value="" disabled>Select device status</option>
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-                <option value="warning">Warning</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Device Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter device name"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Device Metrics
+              Device Type
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-700 rounded-lg max-h-80 overflow-y-auto">
-              {currentTypeConfig?.metrics.map(metric => (
-                <div key={metric}>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    {getMetricLabel(metric)}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.metrics[metric] || ''}
-                    placeholder="Enter value"
-                    onChange={(e) => handleMetricChange(metric, e.target.value)}
-                    className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-white"
-                  />
-                </div>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <option value="" disabled>Select device type</option>
+              {Object.entries(DEVICE_TYPES).map(([key, config]) => (
+                <option key={key} value={key}>{config.name}</option>
               ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              {formData.type ? `Configure metrics specific to ${currentTypeConfig?.name || 'this device type'}` : 'Select a device type to configure metrics'}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">
+              {formData.type ? getDeviceTypeDescription(formData.type) : 'Choose a device type to see description'}
             </p>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-700 mt-6">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-             className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              <span>{device ? 'Update' : 'Add'} Device</span>
-            </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
+              placeholder="Enter device location"
+            />
           </div>
-        </form>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <option value="" disabled>Select device status</option>
+              <option value="online">Online</option>
+              <option value="offline">Offline</option>
+              <option value="warning">Warning</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Device Metrics
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-700 rounded-lg max-h-80 overflow-y-auto">
+            {currentTypeConfig?.metrics.map(metric => (
+              <div key={metric}>
+                <label className="block text-xs text-gray-400 mb-1">
+                  {getMetricLabel(metric)}
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.metrics[metric] || ''}
+                  placeholder="Enter value"
+                  onChange={(e) => handleMetricChange(metric, e.target.value)}
+                  className="w-full px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-white"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {formData.type ? `Configure metrics specific to ${currentTypeConfig?.name || 'this device type'}` : 'Select a device type to configure metrics'}
+          </p>
+        </div>
+
+        <div className="flex justify-end space-x-3 pt-6 border-t border-gray-700 mt-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            <span>{device ? 'Update' : 'Add'} Device</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
