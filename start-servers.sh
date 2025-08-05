@@ -6,7 +6,7 @@ python app.py &
 FLASK_PID=$!
 
 # Wait a moment for Flask to start
-sleep 3
+sleep 10
 
 # Start React frontend
 echo "Starting React frontend..."
